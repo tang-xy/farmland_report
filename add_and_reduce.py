@@ -8,15 +8,15 @@ class AddAndReduce:
     def __init__(self, df, typestr):
         self.dataframe = df
         self.typestr = typestr
-        self.__writer = pd.ExcelWriter(os.path.join(RESULT_FILE_PATH, self.typestr + '.xls'))
+        self.writer = pd.ExcelWriter(os.path.join(RESULT_FILE_PATH, self.typestr + '.xls'))
         self.keyword = ['行政区划代码', '行政区划名称']
 
     def __del__(self):
-        self.__writer.close()
+        self.writer.close()
 
     def __writefile(self, df, sheet_name):
-        df.to_excel(excel_writer = self.__writer, sheet_name = sheet_name)
-        self.__writer.save()
+        df.to_excel(excel_writer = self.writer, sheet_name = sheet_name)
+        self.writer.save()
 
     def write_distribution(self):
         farmland_grade_frame = self.dataframe.drop(self.keyword + ['平均等', '分区'], axis = 1)
