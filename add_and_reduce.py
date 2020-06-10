@@ -8,19 +8,22 @@ class AddAndReduce:
     def __init__(self, df, typestr):
         self.dataframe = df
         self.typestr = typestr
-        self.writer = pd.ExcelWriter(os.path.join(RESULT_FILE_PATH, self.typestr + '.xls'))
+        self.__writer = pd.ExcelWriter(os.path.join(RESULT_FILE_PATH, self.typestr + '.xls'))
         self.keyword = ['行政区划代码', '行政区划名称']
 
     def __del__(self):
-        self.writer.close()
+        self.__writer.close()
+
+    def __writefile(self, df, sheet_name):
+        df.to_excel(excel_writer = self.__writer, sheet_name = sheet_name)
+        self.__writer.save()
 
     def write_distribution(self):
         farmland_grade_frame = self.dataframe.drop(self.keyword + ['平均等', '分区'], axis = 1)
         farmland_grade_sum = pd.DataFrame(farmland_grade_frame.sum(),columns = ['面积(公顷)'])
         farmland_grade_sum['面积(亩)'] = farmland_grade_sum['面积(公顷)'] * 15
         farmland_grade_sum['比例'] = farmland_grade_sum['面积(公顷)'] / farmland_grade_sum['面积(公顷)']['总计']
-        farmland_grade_sum.to_excel(excel_writer = self.writer, sheet_name = '分级统计')
-        self.writer.save()
+        self.__writefile(farmland_grade_sum, sheet_name = '分级统计')
         self.write_distribution_groupby_grade(farmland_grade_sum)
         # 历史遗留问题，实为冗余调用，下个版本考虑去除
 
@@ -32,11 +35,10 @@ class AddAndReduce:
             farmland_area_grade_droped = farmland_area_grade_sum.drop(['耕地等级'], axis = 0)
             for key in farmland_area_grade_droped.keys():
                 farmland_area_grade_droped[key + '占比'] = farmland_area_grade_droped[key] / farmland_area_grade_droped[key]['合计']
-            farmland_area_grade_droped.to_excel(excel_writer = self.writer, sheet_name = '分地区分级统计-行')
+            self.__writefile(farmland_area_grade_droped, sheet_name = '分地区分级统计-行')
         elif axis == 0:
             farmland_grade_sum['耕地等级'] = CLASSES_GRADE
-            farmland_grade_sum.groupby('耕地等级', sort = False).sum().to_excel(excel_writer = self.writer, sheet_name = '分地区分级统计-列')
-        self.writer.save()
+            self.__writefile(farmland_grade_sum.groupby('耕地等级', sort = False).sum(), sheet_name = '分地区分级统计-列')
 
     def write_distribution_groupby_area(self):
         farmland_area_frame = self.dataframe.drop(self.keyword + ['平均等'], axis = 1)
@@ -49,8 +51,7 @@ class AddAndReduce:
             farmland_area_sum['产能(万吨)'] = (0.002325 - farmland_area_sum['平均等'] * 0.00015) * farmland_area_sum['总计']
             farmland_area_sum['产能(万吨)']['合计'] = farmland_area_sum['产能(万吨)'].sum()
         farmland_area_sum.loc['合计百分比'] = farmland_area_sum.loc['合计'][0 : 16] / farmland_area_sum.loc['合计']['总计']
-        farmland_area_sum.to_excel(excel_writer = self.writer, sheet_name = '分地区统计')
-        self.writer.save()
+        self.__writefile(farmland_area_sum, sheet_name = '分地区统计')
 
     def get_average_grade(self):
         farmland_area_frame = self.dataframe.drop(self.keyword, axis = 1)
