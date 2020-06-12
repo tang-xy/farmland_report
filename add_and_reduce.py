@@ -50,8 +50,17 @@ class AddAndReduce:
         if '利用' in self.typestr:
             farmland_area_sum['产能(万吨)'] = (0.002325 - farmland_area_sum['平均等'] * 0.00015) * farmland_area_sum['总计']
             farmland_area_sum['产能(万吨)']['合计'] = farmland_area_sum['产能(万吨)'].sum()
-        farmland_area_sum.loc['合计百分比'] = farmland_area_sum.loc['合计'][0 : 16] / farmland_area_sum.loc['合计']['总计']
+            farmland_area_sum['产能(百分比)'] = farmland_area_sum['产能(万吨)'] / farmland_area_sum['产能(万吨)']['合计']
+            farmland_area_sum['亩均产能(kg/亩)'] = farmland_area_sum['产能(万吨)'] * 1000 * 10000/ (farmland_area_sum['总计'] * 15)
+        farmland_area_sum.loc['合计全国百分比'] = farmland_area_sum.loc['合计'][0 : 16] / farmland_area_sum.loc['合计']['总计']
+        farmland_area_sum.loc['累计百分比'] = self.get_sum_percentage(farmland_area_sum.loc['合计全国百分比'])
         self.__writefile(farmland_area_sum, sheet_name = '分地区统计')
+
+    def get_sum_percentage(self, se):
+        res = se.copy()
+        for i in range(len(se) - 1):
+            res[i] = se[0 : i + 1].sum()
+        return res
 
     def get_average_grade(self):
         farmland_area_frame = self.dataframe.drop(self.keyword, axis = 1)
